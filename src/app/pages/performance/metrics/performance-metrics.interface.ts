@@ -1,5 +1,6 @@
-export interface ISearchPerformanceData {
+export interface ISearchPerformanceMetrics {
     schoolId: number;
+    classId: string;
     className: string;
     sectionName: string;
     month: number;
@@ -136,4 +137,29 @@ export interface ITeamWiseMetricsRow {
     discipline: number;
     homework: number;
     total: number;
+}
+
+export interface IEncouragingMetricsDataTable {
+    metrics: IEncouragingMetrics[];
+}
+
+export interface IEncouragingMetrics {
+    metricsType: string;
+    classs: string;
+    sectionData: ISection[];
+    monthName: String;
+    averageRow: IAverageRow;
+}
+
+export interface ISection {
+    section: string;
+    month1percentage: string;
+    month2percentage: string;
+    changeinpercentage: string;
+}
+
+export interface IAverageRow {
+    month1average: string;
+    month2average: string;
+    changeinaverage: string;
 }
