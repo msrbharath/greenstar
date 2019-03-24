@@ -5,14 +5,28 @@
     </button>
 </div>
 
-<div class="modal-body">
-
+<div class="modal-body" [nbSpinner]="isSpinner" nbSpinnerSize="xxlarge" nbSpinnerStatus="success">
+    <div class="row" *ngIf='isShowSuccessMsg'>
+        <div class="col-sm-12">
+            <p class="text-success">
+                <strong>Students Bulk Upload successfull!</strong>
+            </p>
+        </div>
+    </div>
+    <div class="row" *ngIf='isShowErrorMsg'>
+        <div class="col-sm-12">
+            <p class="text-danger">
+                <strong>{{errorMsg}}</strong>
+            </p>
+        </div>
+    </div>
     <div class="row">
         <div class="col-sm-6">
             <form class="form-horizontal">
                 <div class="form-group">
                     <div class="input-group">
-                        <input type="file" id="uploadFile" name="uploadFile" class="form-control" placeholder="Upload Student Data" />
+                        <input type="file" id="uploadFile" name="uploadFile" (change)="handleFileInput($event.target.files)" class="form-control"
+                        placeholder="Upload Student Data" />
                     </div>
                 </div>
             </form>
@@ -31,5 +45,5 @@
 </div>
 
 <div class="modal-footer">
-    <button class="btn btn-md btn-primary" (click)="uploadStudentBulkData()">Upload</button>
+    <button class="btn btn-md btn-primary" [disabled]="isDisableButton" (click)="uploadStudentBulkData()">Upload</button>
 </div>

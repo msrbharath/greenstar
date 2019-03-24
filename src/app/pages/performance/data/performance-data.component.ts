@@ -1,18 +1,14 @@
-import { OnInit, Component } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { saveAs as tempSaveAs } from 'file-saver';
-import { NbDialogService } from '@nebular/theme';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { LocalDataSource } from 'ng2-smart-table';
-import { IPerformanceDataTable, IPerformanceRow, IPerformanceDay, IPerformanceData, IPerformanceHeader, ISearchPerformanceData } from './performance-data.interface';
-import { PerformanceStaticData, } from './performance-data.constant';
-import { PerformanceDataUploadModalComponent } from './performance-data-upload.component.modal';
-import { PerformanceDataSuccessModalComponent } from './performance-data-success.component.modal';
-import { PerformanceDataService } from './performance-data.service';
-import { PerformanceStarService } from '../star/performance-star.service';
+import { saveAs as tempSaveAs } from 'file-saver';
 import { ValidatorUtil } from '../../util/validator-util';
-import { ISchoolDetail, IClassSectionDetail } from '../star/performance-star.interface';
+import { IClassSectionDetail, ISchoolDetail } from '../star/performance-star.interface';
+import { PerformanceStarService } from '../star/performance-star.service';
+import { PerformanceDataSuccessModalComponent } from './performance-data-success.component.modal';
+import { PerformanceDataUploadModalComponent } from './performance-data-upload.component.modal';
+import { IPerformanceData, IPerformanceDataTable, IPerformanceHeader, ISearchPerformanceData } from './performance-data.interface';
+import { PerformanceDataService } from './performance-data.service';
 
 @Component({
     selector: 'ngx-performance',
@@ -30,9 +26,11 @@ export class PerformanceDataComponent implements OnInit {
     public isSearchDataNotValid: boolean = false;
     public isSpinner: boolean = false;
     public action: string = 'update';
+    public searchDataErrorMsg: string = '';
 
     public schoolList: ISchoolDetail[];
     public classList: IClassSectionDetail[];
+    public weekDays = new Map<String, String>();
 
     public perfDataForm: FormGroup;
 
@@ -55,10 +53,17 @@ export class PerformanceDataComponent implements OnInit {
             month: ['', Validators.required],
             week: ['', Validators.required]
         });
+        this.performanceSource = {} as IPerformanceDataTable;
+        this.isShowPerformanceMetricTable = false;
+        this.isPerformanceChkboxEnabled = false;
+        this.isPerformanceEditEnabled = false;
+        this.isPerformanceAddEnabled = false;
     }
 
     public resetPerformanceSearch(): void {
         this.initializeForm();
+        this.isSearchDataNotValid = false;
+        this.searchDataErrorMsg = '';
     }
 
     public loadExistingPerformanceData(searchPerformanceData: ISearchPerformanceData): void {
@@ -136,7 +141,7 @@ export class PerformanceDataComponent implements OnInit {
         );
     }
 
-    private loadClassDetailsBySchool($event) : void {
+    public loadClassDetailsBySchool(): void {
         if (this.perfDataForm.getRawValue().schoolId != 0) {
             this.isSpinner = true;
             let schoolDetail: ISchoolDetail = {} as ISchoolDetail;
@@ -154,24 +159,52 @@ export class PerformanceDataComponent implements OnInit {
         }
     }
 
+    public populateWeekWorkingDays(): void {
+
+        this.isSearchDataNotValid = false;
+        this.searchDataErrorMsg = '';
+
+        if (!ValidatorUtil.isEmpty(this.perfDataForm.getRawValue().schoolId)
+            && !ValidatorUtil.isEmpty(this.perfDataForm.getRawValue().classId)
+            && !ValidatorUtil.isEmpty(this.perfDataForm.getRawValue().month)) {
+
+            this.isSpinner = true;
+            let searchPerformanceData: ISearchPerformanceData = this.getSearchParamObject();
+
+            this.performanceDataService.getWeekDaysByMonth(searchPerformanceData).subscribe(
+                (response) => {
+                    this.weekDays = response.result;
+                    this.isSpinner = false;
+                },
+                error => {
+                    console.log("Http Server error", error);
+                    this.isSpinner = false;
+                }
+            );
+        } else {
+            ValidatorUtil.validateAllFormFields(this.perfDataForm);
+            this.isSearchDataNotValid = true;
+            this.searchDataErrorMsg = 'All fields are mandatory!';
+            this.weekDays = new Map<String, String>();
+        }
+    }
+
     public openBulkUploadMmodal(): void {
         const activeModal = this.modalService.open(PerformanceDataUploadModalComponent, { size: 'lg', container: 'nb-layout' });
     }
 
     public downloadTemplate(): void {
-        
         this.isSearchDataNotValid = false;
-        if (this.perfDataForm.valid) {
-            let searchPerformanceData: ISearchPerformanceData = {} as ISearchPerformanceData;
-            searchPerformanceData.schoolId = this.perfDataForm.getRawValue().schoolId;
-            searchPerformanceData.classId = this.perfDataForm.getRawValue().classId;
-            searchPerformanceData.month = this.perfDataForm.getRawValue().month;
-            searchPerformanceData.week = this.perfDataForm.getRawValue().week;
+        this.searchDataErrorMsg = '';
+        if (!ValidatorUtil.isEmpty(this.perfDataForm.getRawValue().schoolId)
+            && !ValidatorUtil.isEmpty(this.perfDataForm.getRawValue().classId)
+            && !ValidatorUtil.isEmpty(this.perfDataForm.getRawValue().month)) {
 
-            let fileName = searchPerformanceData.schoolId
-                + '_' + searchPerformanceData.classId 
+            let searchPerformanceData: ISearchPerformanceData = this.getSearchParamObject();
+
+            let fileName = searchPerformanceData.schoolName
+                + '_' + searchPerformanceData.className
                 + '_' + searchPerformanceData.month
-                + '_' + searchPerformanceData.week
                 + '.xlsx';
 
             this.isSpinner = true;
@@ -189,40 +222,34 @@ export class PerformanceDataComponent implements OnInit {
         } else {
             ValidatorUtil.validateAllFormFields(this.perfDataForm);
             this.isSearchDataNotValid = true;
+            this.searchDataErrorMsg = 'Please select school, class and month';
         }
     }
 
     public searchPerformanceData(): void {
-
         this.isSearchDataNotValid = false;
+        this.searchDataErrorMsg = '';
         if (this.perfDataForm.valid) {
-            let searchPerformanceData: ISearchPerformanceData = {} as ISearchPerformanceData;
-            searchPerformanceData.schoolId = this.perfDataForm.getRawValue().schoolId;
-            searchPerformanceData.classId = this.perfDataForm.getRawValue().classId;
-            searchPerformanceData.month = this.perfDataForm.getRawValue().month;
-            searchPerformanceData.week = this.perfDataForm.getRawValue().week;
-
+            let searchPerformanceData: ISearchPerformanceData = this.getSearchParamObject();
             this.loadExistingPerformanceData(searchPerformanceData);
         } else {
             ValidatorUtil.validateAllFormFields(this.perfDataForm);
             this.isSearchDataNotValid = true;
+            this.searchDataErrorMsg = 'All fields are mandatory!';
         }
     }
 
     public addPerformanceData(): void {
         this.action = 'create';
         this.isSearchDataNotValid = false;
+        this.searchDataErrorMsg = '';
         if (this.perfDataForm.valid) {
-            let searchPerformanceData: ISearchPerformanceData = {} as ISearchPerformanceData;
-            searchPerformanceData.schoolId = this.perfDataForm.getRawValue().schoolId;
-            searchPerformanceData.classId = this.perfDataForm.getRawValue().classId;
-            searchPerformanceData.month = this.perfDataForm.getRawValue().month;
-            searchPerformanceData.week = this.perfDataForm.getRawValue().week;
-
+            let searchPerformanceData: ISearchPerformanceData = this.getSearchParamObject();
             this.loadCreatePerformanceData(searchPerformanceData);
         } else {
             ValidatorUtil.validateAllFormFields(this.perfDataForm);
             this.isSearchDataNotValid = true;
+            this.searchDataErrorMsg = 'All fields are mandatory!';
         }
     }
 
@@ -232,7 +259,7 @@ export class PerformanceDataComponent implements OnInit {
 
     public submitPerformanceData(): void {
 
-        this.performanceSource.userId = '534556';
+        this.performanceSource.userId = localStorage.getItem('userId');
 
         if (this.action === 'create') {
             this.isSpinner = true;
@@ -279,12 +306,11 @@ export class PerformanceDataComponent implements OnInit {
         return ValidatorUtil.displayFieldCss(this.perfDataForm, field);
     }
 
-    public checkCellPerformanceDataStatus(event: any, performanceRow: IPerformanceRow, performanceDay: IPerformanceDay, performanceData: IPerformanceData): void {
-        performanceData.value = event.target.checked;
+    public checkCellPerformanceDataStatus(checkValue: boolean, performanceData: IPerformanceData): void {
+        performanceData.value = checkValue;
     }
 
-    public checkPerformanceParamWise(event: any, headerObj: IPerformanceHeader, subTitle: IPerformanceHeader): void {
-
+    public checkPerformanceParamWise(checkValue: boolean, headerObj: IPerformanceHeader, subTitle: IPerformanceHeader): void {
         this.performanceSource.performanceRows.forEach(
             (performanceRow) => {
                 performanceRow.performanceDays.forEach(
@@ -293,7 +319,7 @@ export class PerformanceDataComponent implements OnInit {
                             performanceDay.performanceData.forEach(
                                 (performanceData) => {
                                     if (performanceData.key === subTitle.title) {
-                                        performanceData.value = event.target.checked;
+                                        performanceData.value = checkValue;
                                     }
                                 });
                         }
@@ -301,8 +327,7 @@ export class PerformanceDataComponent implements OnInit {
             });
     }
 
-    public checkPerformanceDayWise(event: any, headerObj: IPerformanceHeader): void {
-
+    public checkPerformanceDayWise(checkValue: boolean, headerObj: IPerformanceHeader): void {
         this.performanceSource.performanceRows.forEach(
             (performanceRow) => {
                 performanceRow.performanceDays.forEach(
@@ -310,7 +335,7 @@ export class PerformanceDataComponent implements OnInit {
                         if (performanceDay.dateValue === headerObj.title) {
                             performanceDay.performanceData.forEach(
                                 (performanceData) => {
-                                    performanceData.value = event.target.checked;
+                                    performanceData.value = checkValue;
                                 });
                         }
                     });
@@ -323,15 +348,15 @@ export class PerformanceDataComponent implements OnInit {
                     performanceHeader.subTitleList.forEach(
                         (performanceHeader) => {
                             //if (performanceHeader.title === headerObj.title) {
-                            performanceHeader.checkValue = event.target.checked;
+                            performanceHeader.checkValue = checkValue;
                             //}
                         });
                 }
             });
-
     }
 
-    public checkAllPerformance(event: any): void {
+    public checkAllPerformance(checkValue: boolean): void {
+
         // check all performance parameters
         this.performanceSource.performanceRows.forEach(
             (performanceRow) => {
@@ -339,7 +364,7 @@ export class PerformanceDataComponent implements OnInit {
                     (performanceDay) => {
                         performanceDay.performanceData.forEach(
                             (performanceData) => {
-                                performanceData.value = event.target.checked;
+                                performanceData.value = checkValue;
                             });
                     });
             });
@@ -347,12 +372,48 @@ export class PerformanceDataComponent implements OnInit {
         // check header checkbox
         this.performanceSource.headers.forEach(
             (performanceHeader) => {
-                performanceHeader.checkValue = event.target.checked;
+                performanceHeader.checkValue = checkValue;
                 performanceHeader.subTitleList.forEach(
                     (performanceHeader) => {
-                        performanceHeader.checkValue = event.target.checked;
+                        performanceHeader.checkValue = checkValue;
                     });
             });
+    }
+
+    private getSearchParamObject(): ISearchPerformanceData {
+
+        let searchPerformanceData: ISearchPerformanceData = {} as ISearchPerformanceData;
+        searchPerformanceData.schoolId = this.perfDataForm.getRawValue().schoolId;
+        searchPerformanceData.classId = this.perfDataForm.getRawValue().classId;
+        searchPerformanceData.month = this.perfDataForm.getRawValue().month;
+        searchPerformanceData.week = this.perfDataForm.getRawValue().week;
+
+        searchPerformanceData.schoolName = this.getSchoolName(this.perfDataForm.getRawValue().schoolId);
+        searchPerformanceData.className = this.getClassName(this.perfDataForm.getRawValue().classId);
+
+        return searchPerformanceData;
+    }
+
+    private getSchoolName(schoolId: number): string {
+
+        let schooName = '';
+        this.schoolList.forEach(school => {
+            if (school.id == schoolId) {
+                schooName = school.schoolName;
+            }
+        });
+        return schooName;
+    }
+
+    private getClassName(classId: number): string {
+
+        let className = '';
+        this.classList.forEach(classz => {
+            if (classz.id == classId) {
+                className = classz.className;
+            }
+        });
+        return className;
     }
 
 }

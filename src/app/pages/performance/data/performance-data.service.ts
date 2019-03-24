@@ -1,9 +1,10 @@
-import { Injectable } from "@angular/core";
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
+import { environment } from '../../../../environments/environment';
 import { IPerformanceDataTable, ISearchPerformanceData } from "./performance-data.interface";
 
-const API_URL: string = 'http://localhost:2640';
+const API_URL: string = environment.API_URL+'/api';
 
 @Injectable()
 export class PerformanceDataService {
@@ -35,6 +36,10 @@ export class PerformanceDataService {
 
     public uploadBulkPerformanceData(formData: FormData): Observable<any> {
         return this.http.post(API_URL + '/perfdata/uploadbulkdata', formData, { headers: this.headerValue });
+    }
+
+    public getWeekDaysByMonth(searchPerformanceData: ISearchPerformanceData): Observable<any> {
+        return this.http.post(API_URL + '/perfdata/weekdayes', searchPerformanceData, { headers: this.headerValue });
     }
 
     private handleError(error: Response | any): any {

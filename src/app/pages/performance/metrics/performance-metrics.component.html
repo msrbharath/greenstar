@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-md-12">
+    <div class="col-sm-12">
         <nb-card>
             <nb-card-body [nbSpinner]="isSpinner" nbSpinnerSize="xxlarge" nbSpinnerStatus="success">
               <nb-tabset>
@@ -9,7 +9,7 @@
                         <div class="col-sm-5">
                             <label for="schoolId" class="col-form-label required">School</label>
                             <div class="input-group required">
-                                <select id="schoolId" name="schoolId" formControlName="schoolId" class="form-control form-control-sm" [ngClass]="displayFieldCss('schoolId')" (change)="loadIndividualClassDetailsBySchool($event.target.value)" required>
+                                <select id="schoolId" name="schoolId" formControlName="schoolId" class="form-control form-control-sm" (change)="loadIndividualClassDetailsBySchool()" required>
                                     <option value=''>Select</option>
                                     <option *ngFor="let school of schoolList" value={{school.id}}>
                                         {{school.schoolName}}
@@ -21,7 +21,7 @@
                         <div class="col-sm-3">
                             <label for="className" class="col-form-label required">Class & Section</label>
                             <div class="input-group">
-                                <select id="classId" name="classId" formControlName="classId" class="form-control form-control-sm" [ngClass]="displayFieldCss('classId')">
+                                <select id="classId" name="classId" formControlName="classId" class="form-control form-control-sm">
                                     <option value=''>Select</option>
                                     <option *ngFor="let class of classList" value={{class.id}}>
                                         {{class.classAndSectionName}}
@@ -29,14 +29,11 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class='row'>
-                        <div class='col-md-2'>
+                        <div class='col-sm-2'>
                             <label for="month" class="col-form-label required">Month</label>
                             <div class="input-group">
-                                <select id="month" name="month" formControlName="month" class="form-control form-control-sm" [ngClass]="displayFieldCss('month')">
-                                    <option value=''>--Select--</option>
+                                <select id="month" name="month" formControlName="month" class="form-control form-control-sm" (change)="populateWeekWorkingDays()" required>
+                                    <option value=''>Select</option>
                                     <option value='1'>Jan</option>
                                     <option value='2'>Feb</option>
                                     <option value='3'>Mar</option>
@@ -52,40 +49,37 @@
                                 </select>
                             </div>
                         </div>
-                        <div class='col-md-2'>
+                        <div class='col-sm-2'>
                             <label for="week" class="col-form-label required">Week</label>
                             <div class="input-group">
-                                <select id="week" name="week" formControlName="week" class="form-control form-control-sm" [ngClass]="displayFieldCss('week')">
+                                <select id="week" name="week" formControlName="week" class="form-control form-control-sm">
                                     <option value=''>Select</option>
-                                    <option value='2019-02-01~2019-02-01'>Week-1</option>
-                                    <option value='2019-02-04~2019-02-08'>Week-2</option>
-                                    <option value='2019-02-11~2019-02-15'>Week-3</option>
-                                    <option value='2019-02-18~2019-02-22'>Week-4</option>
-                                    <option value='2019-02-25~2019-02-28'>Week-5</option>
+                                    <option *ngFor="let weekDay of weekDays | keyvalue" value={{weekDay.value}}>
+                                        {{weekDay.key}}
+                                    </option>
                                 </select>
                             </div>
                         </div>
                     </div>
                     <div class="row pt-3">
                         <div class="col-sm-3 text-left errormsg">
-                            <span style="color:red" *ngIf="isSearchDataNotValid">All fields are mandatory!</span>
+                            <span id="errorMessage" name="errorMessage" style="color:red" *ngIf="isSearchDataNotValid">All fields are mandatory!</span>
                         </div>
                     </div>
                     <div class='row pt-3'>
-                        <div class="col-sm-3 text-left">
+                        <div class="col-sm-4 text-left">
                             <button class="btn btn-primary btn-sm" type="button" (click)="resetPerformanceSearch();">Reset</button>
                         </div>
-                        <div class="col-sm-3 text-center">
-                            <button class="btn btn-primary btn-sm" type="submit">View Metrics</button>
+                        <div class="col-sm-4">
                         </div>
-                        <div class='col-sm-3 text-right'>
-                            <button class="btn btn-primary btn-sm" type="button" (click)="downloadExcelExport()">Excel Export</button> 
+                        <div class="col-sm-4 text-right">
+                            <button class="btn btn-primary btn-sm" type="submit">View Metrics</button>
                         </div>
                     </div>
                 </form>
     
                     <div class="row pt-3">
-                        <div class="col-md-12">
+                        <div class="col-sm-12" *ngIf="performanceMetricsSource.headers">
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped table-bordered">
                                     <thead>
@@ -94,7 +88,7 @@
                                             <th rowspan="2" scope="col">Roll ID</th>
                                             <th rowspan="2" scope="col">Name</th>
                                             <ng-container *ngFor="let headerObj of performanceMetricsSource.headers">
-                                                <th colspan="3" scope="col" class="text-center">
+                                                <th [attr.colspan]="performanceMetricsSource.totalSubTitle" scope="col" class="text-center">
                                                     <label nbTooltip="{{headerObj.title}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{headerObj.title}}</label> &nbsp;
                                                 </th>
                                             </ng-container>
@@ -114,13 +108,18 @@
                                         <!-- Top Sub Header Row - End -->
                                     </thead>
                                     <tbody>
+                                        <!-- Row content : No data found - Start -->
+                                        <!-- <tr class="text-center" *ngIf='performanceMetricsSource.performanceRows == null || performanceMetricsSource.performanceRows.length == 0'>
+                                            <td [attr.colspan]="(performanceMetricsSource.totalSubTitle * performanceMetricsSource.headers.length) + 2" scope="col">No Data Found</td>
+                                        </tr> -->
+                                        <!-- Row content : No data found - End -->
                                         <!-- Row content - Start -->
                                         <tr *ngFor="let performanceRow of performanceMetricsSource.performanceRows">
                                             <td scope="col">{{ performanceRow.rollId }}</td>
-                                            <td scope="col">{{ performanceRow.name }}</td>
-                                            <ng-container *ngFor="let performanceDay of performanceRow.performanceMetricsDays">
+                                            <td scope="col">{{ performanceRow.studentName }}</td>
+                                            <ng-container *ngFor="let performanceDay of performanceRow.performanceDays">
                                                 <!-- Single Value -->
-                                                <td scope="col" *ngFor="let performanceData of performanceDay.performanceDatas" style="text-align:center;">
+                                                <td scope="col" *ngFor="let performanceData of performanceDay.performanceData" class="text-center"> 
                                                     <label nbTooltip="{{performanceData.value==true?2:0}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{performanceData.value==true?2:0}}</label>
                                                 </td>
                                             </ng-container>
@@ -138,7 +137,7 @@
                             <div class="col-sm-5">
                                 <label for="schoolId" class="col-form-label required">School</label>
                                 <div class="input-group required">
-                                    <select id="schoolId" name="schoolId" formControlName="schoolId" class="form-control form-control-sm" [ngClass]="displayFieldCss('schoolId')" (change)="loadClasswiseClassDetailsBySchool($event.target.value)" required>
+                                    <select id="schoolId" name="schoolId" formControlName="schoolId" class="form-control form-control-sm" (change)="loadClasswiseClassDetailsBySchool()" required>
                                         <option value=''>Select</option>
                                         <option *ngFor="let school of schoolList" value={{school.id}}>
                                             {{school.schoolName}}
@@ -150,10 +149,10 @@
                             <div class="col-sm-3">
                                 <label for="className" class="col-form-label required">Class</label>
                                 <div class="input-group">
-                                    <select [(ngModel)]="selectedClass" id="classId" name="classId" formControlName="classId" class="form-control form-control-sm" [ngClass]="displayFieldCss('classId')">
+                                    <select [(ngModel)]="selectedClassName" id="classId" name="classId" formControlName="classId" class="form-control form-control-sm">
                                         <option value=''>Select</option>
-                                        <option *ngFor="let class of classList" [ngValue]="class">
-                                            {{class.className}}
+                                        <option *ngFor="let classNameFromResponse of distinctClassList" [ngValue]="classNameFromResponse">
+                                            {{classNameFromResponse}}
                                         </option>
                                     </select>
                                 </div>
@@ -162,44 +161,52 @@
 
                     <div class="row pt-3">
                             <div class="col-sm-3 text-left errormsg">
-                                <span style="color:red" *ngIf="isClasswiseSearchDataNotValid">All fields are mandatory!</span>
+                                <span id="errorMessage" name="errorMessage" style="color:red" *ngIf="isClasswiseSearchDataNotValid">All fields are mandatory!</span>
                             </div>
                         </div>
                         <div class='row pt-3'>
-                            <div class="col-sm-3 text-left">
+                            <div class="col-sm-6 text-left">
                                 <button class="btn btn-primary btn-sm" type="button" (click)="resetClasswisePerformanceSearch();">Reset</button>
                             </div>
-                            <div class="col-sm-3 text-center">
+                            <div class="col-sm-6 text-right">
                                 <button class="btn btn-primary btn-sm" type="submit">View Classwise Metrics</button>
-                            </div>
-                            <div class='col-sm-3 text-right'>
-                                <button class="btn btn-primary btn-sm" type="button" (click)="downloadExcelExport()">Excel Export</button> 
                             </div>
                         </div>
                     </form>
     
                     <div class="row pt-3">
-                        <div class="col-md-12">
+                        <div class="col-sm-12" *ngIf="classWiseMetricsSource.sectionData">
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped table-bordered">
                                     <thead>
                                         <!-- Top Header Row - Start -->
                                         <tr>
-                                            <ng-container *ngFor="let headerObj of classWiseMetricsSource.headers">
+                                            
                                                 <th scope="col" class="text-center">
-                                                    <label nbTooltip="{{headerObj.title}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{headerObj.title}}</label> &nbsp;
+                                                    <label nbTooltip="Class & Section" nbTooltipPlacement="top" nbTooltipStatus="info">Class & Section</label> &nbsp;
                                                 </th>
-                                            </ng-container>
+                                                <th scope="col" class="text-center">
+                                                    <label nbTooltip="{{classWiseMetricsSource.paramName1}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{classWiseMetricsSource.paramName1}}</label> &nbsp;
+                                                </th>
+                                                <th scope="col" class="text-center">
+                                                    <label nbTooltip="{{classWiseMetricsSource.paramName2}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{classWiseMetricsSource.paramName2}}</label> &nbsp;
+                                                </th>
+                                                <th scope="col" class="text-center">
+                                                    <label nbTooltip="{{classWiseMetricsSource.paramName3}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{classWiseMetricsSource.paramName3}}</label> &nbsp;
+                                                </th>
+                                                <th scope="col" class="text-center">
+                                                    <label nbTooltip="{{classWiseMetricsSource.totalTitle}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{classWiseMetricsSource.totalTitle}}</label> &nbsp;
+                                                </th>
                                         </tr>
                                         <!-- Top Header Row - End -->
                                     </thead>
                                     <tbody>
                                         <!-- Row content - Start -->
-                                        <tr class="text-center" *ngFor="let performanceRow of classWiseMetricsSource.performanceRows">
-                                            <td scope="col">{{ performanceRow.class }}</td>
-                                            <td scope="col">{{ performanceRow.attendance }}</td>
-                                            <td scope="col">{{ performanceRow.discipline }}</td>
-                                            <td scope="col">{{ performanceRow.homework }}</td>
+                                        <tr class="text-center" *ngFor="let performanceRow of classWiseMetricsSource.sectionData">
+                                            <td scope="col">{{ performanceRow.section }}</td>
+                                            <td scope="col">{{ performanceRow.param1Total }}</td>
+                                            <td scope="col">{{ performanceRow.param2Total }}</td>
+                                            <td scope="col">{{ performanceRow.param3Total }}</td>
                                             <td scope="col">{{ performanceRow.total }}</td>
                                         </tr>
                                         <!-- Row content - End -->
@@ -215,7 +222,7 @@
                             <div class="col-sm-5">
                                 <label for="schoolId" class="col-form-label required">School</label>
                                 <div class="input-group required">
-                                    <select id="schoolId" name="schoolId" formControlName="schoolId" class="form-control form-control-sm" [ngClass]="displayFieldCss('schoolId')" (change)="loadTeamwiseClassDetailsBySchool($event.target.value)" required>
+                                    <select id="schoolId" name="schoolId" formControlName="schoolId" class="form-control form-control-sm" (change)="loadTeamwiseClassDetailsBySchool()" required>
                                         <option value=''>Select</option>
                                         <option *ngFor="let school of schoolList" value={{school.id}}>
                                             {{school.schoolName}}
@@ -225,12 +232,12 @@
                             </div>
     
                             <div class="col-sm-3">
-                                <label for="className" class="col-form-label required">Class & Section</label>
+                                <label for="className" class="col-form-label required">Class</label>
                                 <div class="input-group">
-                                    <select id="classId" name="classId" formControlName="classId" class="form-control form-control-sm" [ngClass]="displayFieldCss('classId')">
+                                    <select [(ngModel)]="selectedClassName" id="classId" name="classId" formControlName="classId" class="form-control form-control-sm">
                                         <option value=''>Select</option>
-                                        <option *ngFor="let class of classList" value={{class.id}}>
-                                            {{class.classAndSectionName}}
+                                        <option *ngFor="let classNameFromResponse of distinctClassList" [ngValue]="classNameFromResponse">
+                                            {{classNameFromResponse}}
                                         </option>
                                     </select>
                                 </div>
@@ -239,44 +246,52 @@
 
                     <div class="row pt-3">
                         <div class="col-sm-3 text-left errormsg">
-                            <span style="color:red" *ngIf="isTeamwiseSearchDataNotValid">All fields are mandatory!</span>
+                            <span id="errorMessage" name="errorMessage" style="color:red" *ngIf="isTeamwiseSearchDataNotValid">All fields are mandatory!</span>
                         </div>
                     </div>
                     <div class='row pt-3'>
-                        <div class="col-sm-3 text-left">
+                        <div class="col-sm-6 text-left">
                             <button class="btn btn-primary btn-sm" type="button" (click)="resetTeamwisePerformanceSearch();">Reset</button>
                         </div>
-                        <div class="col-sm-3 text-center">
+                        <div class="col-sm-6 text-right">
                             <button class="btn btn-primary btn-sm" type="submit">View Teamwise Metrics</button>
-                        </div>
-                        <div class='col-sm-3 text-right'>
-                            <button class="btn btn-primary btn-sm" type="button" (click)="downloadExcelExport()">Excel Export</button> 
                         </div>
                     </div>
                 </form>
     
                     <div class="row pt-3">
-                        <div class="col-md-12">
+                        <div class="col-sm-12" *ngIf="teamWiseMetricsSource.sectionData">
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped table-bordered">
                                     <thead>
                                         <!-- Top Header Row - Start -->
                                         <tr>
-                                            <ng-container *ngFor="let headerObj of teamWiseMetricsSource.headers">
+                                            
                                                 <th scope="col" class="text-center">
-                                                    <label nbTooltip="{{headerObj.title}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{headerObj.title}}</label> &nbsp;
+                                                    <label nbTooltip="Team" nbTooltipPlacement="top" nbTooltipStatus="info">Team</label> &nbsp;
                                                 </th>
-                                            </ng-container>
+                                                <th scope="col" class="text-center">
+                                                    <label nbTooltip="{{teamWiseMetricsSource.paramName1}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{teamWiseMetricsSource.paramName1}}</label> &nbsp;
+                                                </th>
+                                                <th scope="col" class="text-center">
+                                                    <label nbTooltip="{{teamWiseMetricsSource.paramName2}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{teamWiseMetricsSource.paramName2}}</label> &nbsp;
+                                                </th>
+                                                <th scope="col" class="text-center">
+                                                    <label nbTooltip="{{teamWiseMetricsSource.paramName3}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{teamWiseMetricsSource.paramName3}}</label> &nbsp;
+                                                </th>
+                                                <th scope="col" class="text-center">
+                                                    <label nbTooltip="{{teamWiseMetricsSource.totalTitle}}" nbTooltipPlacement="top" nbTooltipStatus="info">{{teamWiseMetricsSource.totalTitle}}</label> &nbsp;
+                                                </th>
                                         </tr>
                                         <!-- Top Header Row - End -->
                                     </thead>
                                     <tbody>
                                         <!-- Row content - Start -->
-                                        <tr class="text-center" *ngFor="let performanceRow of teamWiseMetricsSource.performanceRows">
-                                            <td scope="col">{{ performanceRow.team }}</td>
-                                            <td scope="col">{{ performanceRow.attendance }}</td>
-                                            <td scope="col">{{ performanceRow.discipline }}</td>
-                                            <td scope="col">{{ performanceRow.homework }}</td>
+                                        <tr class="text-center" *ngFor="let performanceRow of teamWiseMetricsSource.sectionData">
+                                            <td scope="col">{{ performanceRow.teamName }}</td>
+                                            <td scope="col">{{ performanceRow.param1Total }}</td>
+                                            <td scope="col">{{ performanceRow.param2Total }}</td>
+                                            <td scope="col">{{ performanceRow.param3Total }}</td>
                                             <td scope="col">{{ performanceRow.total }}</td>
                                         </tr>
                                         <!-- Row content - End -->
@@ -288,82 +303,87 @@
 
                   </nb-tab>
                 <nb-tab tabTitle="Encouraging Metrics" tabIcon="nb-arrow-thin-up" responsive>
+                <form [formGroup]="encouragingPerfMetricsForm" (ngSubmit)="viewEncouragingPerformanceMetrics()">
                   <div class='row pt-5'>
-                        <div class='col-md-2'>
-                            <label class='col-form-label required'>City</label>
-                            <nb-select placeholder="Select" outline>
-                                <nb-option value="1">Coimbatore</nb-option>
-                                <nb-option value="2">Erode</nb-option>
-                            </nb-select>
-                        </div>
-                        <div class='col-md-3'>
-                            <label class='col-form-label required'>School Name</label>
-                            <nb-select placeholder="Select" outline>
-                                <nb-option value="1">Nikita Matriculation School</nb-option>
-                                <nb-option value="2">KV Matriculation School</nb-option>
-                                <nb-option value="3">SSVM Matriculation School</nb-option>
-                            </nb-select>
-                        </div>
-                        <div class='col-md-3'>
-                            <label class='col-form-label required'>Class</label>
-                            <nb-select placeholder="Select" outline>
-                                <nb-option value="1">LKG</nb-option>
-                                <nb-option value="2">UKG</nb-option>
-                                <nb-option value="3">First</nb-option>
-                            </nb-select>
-                        </div>
+                    <div class="col-sm-6">
+                    <label for="schoolId" class="col-form-label required">School</label>
+                    <div class="input-group required">
+                        <select id="schoolId" name="schoolId" formControlName="schoolId" class="form-control form-control-sm" (change)="loadEncouragingClassDetailsBySchool()" required>
+                            <option value=''>Select</option>
+                            <option *ngFor="let school of schoolList" value={{school.id}}>
+                                {{school.schoolName}}
+                            </option>
+                        </select>
                     </div>
-                    <div class='row'>
-                        <div class='col-md-2'>
-                            <label class='col-form-label required'>Month 1</label>
-                            <nb-select placeholder="Select" outline>
-                                <nb-option value="1">January</nb-option>
-                                <nb-option value="2">February</nb-option>
-                                <nb-option value="3">March</nb-option>
-                                <nb-option value="4">April</nb-option>
-                                <nb-option value="5">May</nb-option>
-                                <nb-option value="6">June</nb-option>
-                                <nb-option value="7">July</nb-option>
-                                <nb-option value="8">August</nb-option>
-                                <nb-option value="9">September</nb-option>
-                                <nb-option value="10">October</nb-option>
-                                <nb-option value="11">November</nb-option>
-                                <nb-option value="12">December</nb-option>
-                            </nb-select>
-                        </div>
-                        <div class='col-md-2'>
-                            <label class='col-form-label required'>Month 2</label>
-                            <nb-select placeholder="Select" outline>
-                                <nb-option value="1">January</nb-option>
-                                <nb-option value="2">February</nb-option>
-                                <nb-option value="3">March</nb-option>
-                                <nb-option value="4">April</nb-option>
-                                <nb-option value="5">May</nb-option>
-                                <nb-option value="6">June</nb-option>
-                                <nb-option value="7">July</nb-option>
-                                <nb-option value="8">August</nb-option>
-                                <nb-option value="9">September</nb-option>
-                                <nb-option value="10">October</nb-option>
-                                <nb-option value="11">November</nb-option>
-                                <nb-option value="12">December</nb-option>
-                            </nb-select>
-                        </div>
+                </div>
+
+                <div class="col-sm-2">
+                    <label for="className" class="col-form-label required">Class</label>
+                    <div class="input-group">
+                        <select [(ngModel)]="selectedClassName" id="classId" name="classId" formControlName="classId" class="form-control form-control-sm">
+                            <option value=''>Select</option>
+                            <option *ngFor="let classNameFromResponse of distinctClassList" [ngValue]="classNameFromResponse">
+                                {{classNameFromResponse}}
+                            </option>
+                        </select>
                     </div>
+                </div>
+                <div class='col-sm-2'>
+                    <label for="month1" class='col-form-label required'>Month 1</label>
+                    <div class="input-group">
+                    <select [(ngModel)]="selectedMonth1" id="month1" name="month1" formControlName="month1" class="form-control form-control-sm" placeholder="Select" outline>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    </div>
+                </div>
+                <div class='col-sm-2'>
+                    <label for="month2" class='col-form-label required'>Month 2</label>
+                    <div class="input-group">
+                        <select [(ngModel)]="selectedMonth2" id="month2" name="month2" formControlName="month2" class="form-control form-control-sm" placeholder="Select" outline>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                </div>
+                    </div>
+                    <div class="row pt-3">
+                            <div class="col-sm-3 text-left errormsg">
+                                <span id="errorMessage" name="errorMessage" style="color:red" *ngIf="isEncouragingSearchDataNotValid">All fields are mandatory!</span>
+                            </div>
+                        </div>
                     <div class='row pt-3'>
-                        <div class='col-md-6'>
+                        <div class='col-sm-4'>
+                        </div>
+                        <div class='col-sm-4'>
                             <button nbButton status="primary">Compare Metrics</button>
                         </div>
-                        <div class='col-md-3'>
-                            
-                        </div>
-                        <div class='col-md-3'>
-                            
-                            <button nbButton status="primary" (click)="downloadExcelExport()">Excel Export</button> 
+                        <div class='col-sm-4'>
                         </div>
                     </div>
-    
+                </form>
                     <div class="row pt-3">
-                        <div class="col-md-12">
+                        <div class="col-sm-12" *ngIf="encouragingMetricsSource">
                             <div class="table-responsive">
                                 <ng-container *ngFor="let encouragingMetrics of encouragingMetricsSource.metrics">
                                     <table class="table table-sm table-striped table-bordered">
@@ -378,8 +398,8 @@
                                             <tr class="text-center">
                                                 <td scope="col">Class</td>
                                                 <td scope="col">Section</td>
-                                                <td scope="col">Month 1</td>
-                                                <td scope="col">Month 2</td>
+                                                <td scope="col">{{monthList[encouragingMetrics.month1-1].label}}</td>
+                                                <td scope="col">{{monthList[encouragingMetrics.month2-1].label}}</td>
                                                 <td scope="col">Increase %</td>
                                             </tr>
                                             <!-- Top Header Row - End -->
@@ -387,23 +407,23 @@
                                         <tbody>
                                             <!-- Row content - Start -->
                                             <tr class="text-center">
-                                                <td  [attr.rowspan]="encouragingMetrics.sectionData.length+1" scope="col">{{ encouragingMetrics.classs }}</td>
+                                                <td  [attr.rowspan]="encouragingMetrics.sectionData.length+1" scope="col">{{ encouragingMetrics.className }}</td>
                                             </tr>
                                             <ng-container *ngFor="let sectionData of encouragingMetrics.sectionData">
                                                 <tr class="text-center">
                                                     <td  scope="col">{{ sectionData.section }}</td>
                                                     <td scope="col">{{ sectionData.month1percentage }}</td>
                                                     <td scope="col">{{ sectionData.month2percentage }}</td>
-                                                    <td scope="col">{{ sectionData.changeinpercentage }}</td>
+                                                    <td scope="col">{{ sectionData.increasePercentage }}</td>
                                                 </tr>
                                             </ng-container>
                                             
                                             <tr class="text-center">
                                                 <td  scope="col"> </td>
                                                 <td  scope="col">Average</td>
-                                                <td  scope="col">{{ encouragingMetrics.averageRow.month1average }}</td>
-                                                <td  scope="col">{{ encouragingMetrics.averageRow.month2average }}</td>
-                                                <td scope="col">{{ encouragingMetrics.averageRow.changeinaverage }}</td>
+                                                <td  scope="col">{{ encouragingMetrics.averageRow.month1Average }}</td>
+                                                <td  scope="col">{{ encouragingMetrics.averageRow.month2Average }}</td>
+                                                <td scope="col">{{ encouragingMetrics.averageRow.changeinAverage }}</td>
                                             </tr>
                                             <!-- Row content - End -->
                                         </tbody>

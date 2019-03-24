@@ -1,9 +1,12 @@
 export interface ISearchPerformanceMetrics {
     schoolId: number;
+    schoolName: string;
     classId: string;
     className: string;
     sectionName: string;
     month: number;
+    month1: string;
+    month2: string;
     week: string;    
 }
 
@@ -42,20 +45,27 @@ export interface IPerformanceData {
 }
 
 export interface IPerformanceMetricsDataTable {
+    schoolId: number;
+    classId: number;
+    className: string;
+    section: string;
+    month: number;
+    week: string;
+    userId: string;
     headers: IPerformanceHeader[];
     performanceRows: IPerformanceMetricsRow[];
 }
 
 export interface IPerformanceMetricsRow {
     rollId: string;
-    name: string;
-    performanceMetricsDays: IPerformanceMetricsDay[];
+    studentName: string;
+    performanceDays: IPerformanceMetricsDay[];
 }
 
 
 export interface IPerformanceMetricsDay {
     dateValue: string;
-    performanceDatas: IPerformanceMetricsData[];
+    performanceData: IPerformanceMetricsData[];
 }
 
 export interface IPerformanceMetricsWeek {
@@ -106,17 +116,24 @@ export interface IClassWiseHeader {
 }
 
 export interface IClassWiseMetricsDataTable {
-    headers: IClassWiseHeader[];
-    performanceRows: IClassWiseMetricsRow[];
+    className: string;
+    paramName1: string,
+    paramName2: string,
+    paramName3: string,
+    totalTitle: string,
+    sectionData: IClassWiseMetricsRow[];
 }
 
 
 export interface IClassWiseMetricsRow {
-    class: string;
-    attendance: number;
-    discipline: number;
-    homework: number;
-    total: number;
+        teamName: string,
+        section: string,
+        param1Title: string,
+        param1Total: number,
+        param2Title: string,
+        param2Total: number,
+        param3Title: string,
+        param3Total: number
 }
 
 
@@ -126,17 +143,24 @@ export interface ITeamWiseHeader {
 }
 
 export interface ITeamWiseMetricsDataTable {
-    headers: ITeamWiseHeader[];
-    performanceRows: ITeamWiseMetricsRow[];
+    className: string;
+    paramName1: string,
+    paramName2: string,
+    paramName3: string,
+    totalTitle: string,
+    sectionData: ITeamWiseMetricsRow[];
 }
 
 
 export interface ITeamWiseMetricsRow {
-    team: string;
-    attendance: number;
-    discipline: number;
-    homework: number;
-    total: number;
+        teamName: string,
+        section: string,
+        param1Title: string,
+        param1Total: number,
+        param2Title: string,
+        param2Total: number,
+        param3Title: string,
+        param3Total: number
 }
 
 export interface IEncouragingMetricsDataTable {
@@ -145,9 +169,13 @@ export interface IEncouragingMetricsDataTable {
 
 export interface IEncouragingMetrics {
     metricsType: string;
-    classs: string;
+    classId: string;
+    className: string;
     sectionData: ISection[];
-    monthName: String;
+    month1: number;
+    monthName1: String;
+    month2: number;
+    monthName2: String;
     averageRow: IAverageRow;
 }
 
@@ -155,11 +183,11 @@ export interface ISection {
     section: string;
     month1percentage: string;
     month2percentage: string;
-    changeinpercentage: string;
+    increasePercentage: string;
 }
 
 export interface IAverageRow {
     month1average: string;
     month2average: string;
-    changeinaverage: string;
+    changeinAverage: string;
 }

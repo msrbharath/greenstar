@@ -3,7 +3,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from "rxjs";
 import { ISearchPerformanceStarData } from "./performance-star.interface";
 
-const API_URL: string = 'http://localhost:2640';
+import { environment } from '../../../../environments/environment';
+
+const API_URL: string = environment.API_URL+'/api/perfdata';
 
 @Injectable()
 export class PerformanceGenerateStarService {
